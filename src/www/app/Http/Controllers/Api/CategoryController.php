@@ -57,6 +57,7 @@ class CategoryController extends BaseApiController
     */
     public function destroy($id)
     {
-        return $this->categoryService->delete($id);
+        $this->categoryService->delete($id);
+        return response()->json(['result' => 1], 200);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Services\ExpenseService;
 use App\Http\Resources\ExpenseResource;
+use App\Models\Expense;
 use Illuminate\Http\Request;
 
 class ExpenseController extends BaseApiController
@@ -57,8 +58,9 @@ class ExpenseController extends BaseApiController
     /*
     * DELETE用ルート
     */
-    public function destroy($id)
+    public function destroy(Expense $expense)
     {
-        return $this->expenseService->delete($id);
+        $this->expenseService->delete($expense);
+        return response()->json(['result' => 1], 200);
     }
 }

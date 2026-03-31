@@ -33,8 +33,8 @@ class ExpenseService
     /*
     * 支出を削除
     */
-    public function delete(int $id)
+    public function delete(Expense $expense)
     {
-        return Expense::findOrFail($id)->delete();
+        return $expense->delete();
     }
 }

@@ -59,6 +59,7 @@ class DateUtil
     public static function monthRange(string $month): array
     {
         $date = Carbon::createFromFormat('Y-m', $month);
+        \Log::info($date);
 
         return [
             'start' => $date->copy()->startOfMonth(),
