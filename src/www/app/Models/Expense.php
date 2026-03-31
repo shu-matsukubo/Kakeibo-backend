@@ -16,8 +16,25 @@ class Expense extends Model
 
     protected $fillable = [
         'amount',
-        'category',
+        'payment_method_id',
+        'category_id',
         'memo',
         'date',
     ];
+
+    /*
+    * 支払方法とのリレーション
+    */
+    public function paymentMethod()
+    {
+        return $this->belongsTo(PaymentMethod::class);
+    }
+
+    /*
+    * カテゴリーとのリレーション
+    */
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
 }

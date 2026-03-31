@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
-use Illuminate\Support\Facades\Request;
 use App\Services\ExpenseService;
+use App\Http\Resources\ExpenseResource;
+use Illuminate\Http\Request;
 
 class ExpenseController extends BaseApiController
 {
@@ -20,9 +21,13 @@ class ExpenseController extends BaseApiController
     /*
     * GET用ルート
     */
-    public function index()
+    public function index(Request $request)
     {
-        return $this->expenseService->getMonthlySummary(null);
+        // 一覧を取得
+        $expenses = $this->expenseService->getMonthlySummary(
+            $request->input('month')
+        );
+        return ExpenseResource::collection($expenses);
     }
 
     /*
@@ -31,16 +36,6 @@ class ExpenseController extends BaseApiController
     public function show($id)
     {
         //
-    }
-
-    /*
-    * GET用ルート（特定の月検索）
-    */
-    public function monthlySummary(Request $request)
-    {
-        return $this->expenseService->getMonthlySummary(
-            $request->query('month')
-        );
     }
 
     /*

@@ -9,9 +9,9 @@ class ExpenseResource extends BaseResource
     {
         return [
             'id' => $this->id,
-            'amount' => $this->amount,
-            'category' => $this->category?->name,
-            'payment_method' => $this->paymentMethod?->name,
+            'amount' => "{$this->amount}円",
+            'category_name' => $this->category?->name,
+            'payment_method_name' => $this->paymentMethod?->name,
             'date' => $this->date,
         ];
     }
