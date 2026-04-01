@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('expenses', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->integer('amount');
+            $table->integer('point_amount')->default(0);
             $table->ulid('payment_method_id');
             $table->ulid('category_id');
             $table->string('memo')->nullable();

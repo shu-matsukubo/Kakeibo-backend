@@ -19,7 +19,9 @@ class ExpenseService
         return Expense::whereBetween('date', [
             $range['start'],
             $range['end']
-        ])->get();
+        ])
+            ->orderBy('created_at', 'desc')
+            ->get();
     }
 
     /*

@@ -16,6 +16,7 @@ class Expense extends Model
 
     protected $fillable = [
         'amount',
+        'point_amount',
         'payment_method_id',
         'category_id',
         'memo',
