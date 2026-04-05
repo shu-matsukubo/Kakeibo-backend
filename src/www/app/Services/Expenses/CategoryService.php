@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Expenses;
 
-use App\Models\Category;
+use App\Models\Expenses\ExpenseCategory;
 
 class CategoryService
 {
@@ -11,7 +11,7 @@ class CategoryService
     */
     public function list()
     {
-        return Category::where('is_active', true)
+        return ExpenseCategory::where('is_active', true)
             ->orderBy('sort_order')
             ->get();
     }
@@ -21,7 +21,7 @@ class CategoryService
     */
     public function create(array $data)
     {
-        return Category::create($data);
+        return ExpenseCategory::create($data);
     }
 
     /*
@@ -29,6 +29,6 @@ class CategoryService
     */
     public function delete(int $id)
     {
-        return Category::findOrFail($id)->delete();
+        return ExpenseCategory::findOrFail($id)->delete();
     }
 }

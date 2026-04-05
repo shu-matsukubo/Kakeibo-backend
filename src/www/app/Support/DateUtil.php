@@ -65,4 +65,17 @@ class DateUtil
             'end' => $date->copy()->endOfMonth(),
         ];
     }
+
+    /**
+     * スタート月と間隔をもとに、現在が該当月か判定
+     */
+    public static function isApplicable(string $targetMonth, string $startMonth, int $interval): bool
+    {
+        $start = \Carbon\Carbon::parse($startMonth)->startOfMonth();
+        $target = \Carbon\Carbon::parse($targetMonth)->startOfMonth();
+
+        $diff = $start->diffInMonths($target, false);
+
+        return $diff >= 0 && $diff % $interval === 0;
+    }
 }

@@ -1,13 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Expenses;
 
-use App\Services\ExpenseService;
-use App\Http\Resources\ExpenseResource;
-use App\Models\Expense;
+use App\Services\Expenses\ExpenseService;
+use App\Models\Expenses\Expense;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Api\BaseApiController;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
-class ExpenseController extends BaseApiController
+class ExpensesController extends BaseApiController
 {
     private ExpenseService $expenseService;
 
@@ -22,13 +23,11 @@ class ExpenseController extends BaseApiController
     /*
     * GET用ルート
     */
-    public function index(Request $request)
+    public function index(Request $request): AnonymousResourceCollection
     {
-        // 一覧を取得
-        $expenses = $this->expenseService->getMonthlySummary(
-            $request->input('month')
-        );
-        return ExpenseResource::collection($expenses);
+        $mode = $request->query('mode', 'summary');
+
+        return $this->expenseService->getExpensesByMode($mode, $request->all());
     }
 
     /*

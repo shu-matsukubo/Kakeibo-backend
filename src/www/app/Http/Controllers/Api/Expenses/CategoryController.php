@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Expenses;
 
 use Illuminate\Http\Request;
-use App\Services\CategoryService;
-use App\Http\Resources\CategoryResource;
+use App\Services\Expenses\CategoryService;
+use App\Http\Resources\Expenses\CategoryResource;
+use App\Http\Controllers\Api\BaseApiController;
 
 class CategoryController extends BaseApiController
 {
@@ -33,7 +34,7 @@ class CategoryController extends BaseApiController
     */
     public function show($id)
     {
-        //
+        // 将来のために念のため残しておく
     }
 
     /*
@@ -41,7 +42,7 @@ class CategoryController extends BaseApiController
     */
     public function store(Request $request)
     {
-        return $this->categoryService->create($request->all());
+        // 将来のために念のため残しておく
     }
 
     /*
@@ -49,7 +50,7 @@ class CategoryController extends BaseApiController
     */
     public function update(Request $request, $id)
     {
-        //
+        // 将来のために念のため残しておく
     }
 
     /*
@@ -57,7 +58,6 @@ class CategoryController extends BaseApiController
     */
     public function destroy($id)
     {
-        $this->categoryService->delete($id);
-        return response()->json(['result' => 1], 200);
+        // 将来のために念のため残しておく
     }
 }

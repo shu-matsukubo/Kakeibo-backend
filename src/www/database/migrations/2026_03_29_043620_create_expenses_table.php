@@ -22,8 +22,8 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('payment_method_id')->references('id')->on('payment_methods');
-            $table->foreign('category_id')->references('id')->on('categories');
+            $table->foreign('payment_method_id')->references('id')->on('expense_payment_methods');
+            $table->foreign('category_id')->references('id')->on('expense_categories');
         });
     }
 

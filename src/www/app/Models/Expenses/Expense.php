@@ -1,15 +1,17 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Expenses;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Builder;
+use App\Enums\Expenses\ExpenseGroupBy;
 
 class Expense extends Model
 {
-    use HasUlids;
-    use SoftDeletes;
+    use HasUlids, SoftDeletes;
 
     protected $keyType = 'string';
     public $incrementing = false;
@@ -23,19 +25,13 @@ class Expense extends Model
         'date',
     ];
 
-    /*
-    * 支払方法とのリレーション
-    */
     public function paymentMethod()
     {
-        return $this->belongsTo(PaymentMethod::class);
+        return $this->belongsTo(ExpensePaymentMethod::class);
     }
 
-    /*
-    * カテゴリーとのリレーション
-    */
     public function category()
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsTo(ExpenseCategory::class);
     }
 }

@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Expenses;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Category extends Model
+class ExpenseRecurringAdjustment extends Model
 {
     use HasUlids;
     use SoftDeletes;
@@ -14,16 +14,10 @@ class Category extends Model
     public $incrementing = false;
 
     protected $fillable = [
-        'name',
-        'sort_order',
-        'is_active',
+        'payment_method_id',
+        'category_id',
+        'amount',
+        'interval_months',
+        'start_month',
     ];
-
-    /*
-    * 支払い履歴とのリレーション
-    */
-    public function expenses()
-    {
-        return $this->hasMany(Expense::class);
-    }
 }

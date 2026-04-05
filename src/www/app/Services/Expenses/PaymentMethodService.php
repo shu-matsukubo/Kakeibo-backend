@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Expenses;
 
-use App\Models\PaymentMethod;
+use App\Models\Expenses\Expense;
+use App\Models\Expenses\ExpensePaymentMethod;
 
 class PaymentMethodService
 {
@@ -11,7 +12,7 @@ class PaymentMethodService
     */
     public function list()
     {
-        return PaymentMethod::where('is_active', true)
+        return ExpensePaymentMethod::where('is_active', true)
             ->orderBy('sort_order')
             ->get();
     }
@@ -20,7 +21,7 @@ class PaymentMethodService
     */
     public function create(array $data)
     {
-        return PaymentMethod::create($data);
+        return ExpensePaymentMethod::create($data);
     }
 
     /*
@@ -28,6 +29,6 @@ class PaymentMethodService
     */
     public function delete(int $id)
     {
-        return PaymentMethod::findOrFail($id)->delete();
+        return ExpensePaymentMethod::findOrFail($id)->delete();
     }
 }

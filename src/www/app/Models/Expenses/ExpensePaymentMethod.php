@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Expenses;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class PaymentMethod extends Model
+class ExpensePaymentMethod extends Model
 {
     use HasUlids;
     use SoftDeletes;

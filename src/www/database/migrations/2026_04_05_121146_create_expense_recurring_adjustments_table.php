@@ -11,11 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('categories', function (Blueprint $table) {
+        Schema::create('expense_recurring_adjustments', function (Blueprint $table) {
             $table->ulid('id')->primary();
-            $table->string('name');
-            $table->integer('sort_order')->default(0);
-            $table->boolean('is_active')->default(true);
+
+            $table->ulid('payment_method_id')->nullable();
+            $table->ulid('category_id')->nullable();
+
+            $table->integer('amount');
+
+            $table->integer('interval_months');
+            $table->date('start_month');
+
             $table->timestamps();
             $table->softDeletes();
         });
@@ -26,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('categories');
+        Schema::dropIfExists('expense_recurring_adjustments');
     }
 };

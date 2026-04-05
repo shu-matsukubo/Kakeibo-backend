@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Expenses;
 
-use App\Services\PaymentMethodService;
+use App\Services\Expenses\PaymentMethodService;
 use Illuminate\Http\Request;
-use App\Http\Resources\PaymentMethodResource;
+use App\Http\Resources\Expenses\PaymentMethodResource;
+use App\Http\Controllers\Api\BaseApiController;
 
 class PaymentMethodController extends BaseApiController
 {
@@ -33,7 +34,7 @@ class PaymentMethodController extends BaseApiController
     */
     public function show($id)
     {
-        //
+        // 将来のために念のため残しておく
     }
 
     /*
@@ -41,7 +42,7 @@ class PaymentMethodController extends BaseApiController
     */
     public function store(Request $request)
     {
-        return $this->paymentMethodService->create($request->all());
+        // 将来のために念のため残しておく
     }
 
     /*
@@ -49,7 +50,7 @@ class PaymentMethodController extends BaseApiController
     */
     public function update(Request $request, $id)
     {
-        //
+        // 将来のために念のため残しておく
     }
 
     /*
@@ -57,6 +58,6 @@ class PaymentMethodController extends BaseApiController
     */
     public function destroy($id)
     {
-        return $this->paymentMethodService->delete($id);
+        // 将来のために念のため残しておく
     }
 }

@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Resources;
+namespace App\Http\Resources\Expenses;
 
+use App\Http\Resources\BaseResource;
 
 class ExpenseResource extends BaseResource
 {
