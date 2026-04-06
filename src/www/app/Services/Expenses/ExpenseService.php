@@ -2,6 +2,7 @@
 
 namespace App\Services\Expenses;
 
+use Illuminate\Support\Collection;
 use App\Models\Expenses\Expense;
 use Illuminate\Support\Facades\DB;
 use App\Models\Expenses\ExpenseRecurringAdjustment;
@@ -37,6 +38,7 @@ class ExpenseService
 
         $groupBy = ExpenseGroupBy::from($params['group_by'] ?? null);
 
+        // 履歴情報本体を取得
         $result = match ($groupBy) {
             ExpenseGroupBy::CATEGORY => $this->aggregateByCategory($range),
             ExpenseGroupBy::PAYMENT_METHOD => $this->aggregateByPaymentMethod($range),
@@ -44,45 +46,13 @@ class ExpenseService
             default => collect(),
         };
 
-        $targetMonth = $params['month'] ?? now()->format('Y-m');
-        $target = \Carbon\Carbon::parse($targetMonth)->startOfMonth();
-
-        $recurringList = ExpenseRecurringAdjustment::query()
-            ->when($groupBy === ExpenseGroupBy::CATEGORY, function ($q) use ($result) {
-                $q->whereIn('category_id', $result->pluck('category_id')->filter());
-            })
-            ->when($groupBy === ExpenseGroupBy::PAYMENT_METHOD, function ($q) use ($result) {
-                $q->whereIn('payment_method_id', $result->pluck('payment_method_id')->filter());
-            })
-            ->whereDate('start_month', '<=', $target)
-            ->whereRaw(
-                'MOD(TIMESTAMPDIFF(MONTH, start_month, ?), interval_months) = 0',
-                [$target->format('Y-m-01')]
-            )
-            ->get();
-
-        $grouped = $recurringList->groupBy(function ($r) use ($groupBy) {
-            return match ($groupBy) {
-                ExpenseGroupBy::CATEGORY => $r->category_id,
-                ExpenseGroupBy::PAYMENT_METHOD => $r->payment_method_id,
-                default => null,
-            };
-        });
-
-        $result->transform(function ($item) use ($grouped, $groupBy) {
-
-            $key = match ($groupBy) {
-                ExpenseGroupBy::CATEGORY => $item->category_id,
-                ExpenseGroupBy::PAYMENT_METHOD => $item->payment_method_id,
-                default => null,
-            };
-
-            $extra = collect($grouped[$key] ?? [])->sum('amount');
-
-            $item->initial_balance = ($item->initial_balance ?? 0) + $extra;
-
-            return $item;
-        });
+        // 追加サイクル情報を取得
+        $result = match ($groupBy) {
+            ExpenseGroupBy::CATEGORY => $this->addRecurringList($groupBy, $result),
+            ExpenseGroupBy::PAYMENT_METHOD => $this->addRecurringList($groupBy, $result),
+            ExpenseGroupBy::DATE => $result,
+            default => collect(),
+        };
 
         return SummaryResource::collection($result);
     }
@@ -194,7 +164,6 @@ class ExpenseService
             ->whereNull('deleted_at')
             ->select([
                 'date',
-
                 DB::raw('SUM(amount) as total_amount'),
                 DB::raw('SUM(point_amount) as total_point'),
                 DB::raw('(SUM(amount) - SUM(point_amount)) as net_amount'),
@@ -203,5 +172,52 @@ class ExpenseService
             ->groupBy('date')
             ->orderBy('date')
             ->get();
+    }
+
+    /*
+    * 繰り返し発生する追加情報を保持
+    */
+    private function addRecurringList(ExpenseGroupBy $groupBy, Collection $result)
+    {
+        $targetMonth = $params['month'] ?? now()->format('Y-m');
+        $target = \Carbon\Carbon::parse($targetMonth)->startOfMonth();
+
+        $recurringList = ExpenseRecurringAdjustment::query()
+            ->when($groupBy === ExpenseGroupBy::CATEGORY, function ($q) use ($result) {
+                $q->whereIn('category_id', $result->pluck('category_id')->filter());
+            })
+            ->when($groupBy === ExpenseGroupBy::PAYMENT_METHOD, function ($q) use ($result) {
+                $q->whereIn('payment_method_id', $result->pluck('payment_method_id')->filter());
+            })
+            ->whereDate('start_month', '<=', $target)
+            ->whereRaw(
+                'MOD(TIMESTAMPDIFF(MONTH, start_month, ?), interval_months) = 0',
+                [$target->format('Y-m-01')]
+            )
+            ->get();
+
+        $grouped = $recurringList->groupBy(function ($r) use ($groupBy) {
+            return match ($groupBy) {
+                ExpenseGroupBy::CATEGORY => $r->category_id,
+                ExpenseGroupBy::PAYMENT_METHOD => $r->payment_method_id,
+                default => null,
+            };
+        });
+
+        $result->transform(function ($item) use ($grouped, $groupBy) {
+
+            $key = match ($groupBy) {
+                ExpenseGroupBy::CATEGORY => $item->category_id,
+                ExpenseGroupBy::PAYMENT_METHOD => $item->payment_method_id,
+                default => null,
+            };
+
+            $extra = collect($grouped[$key] ?? [])->sum('amount');
+
+            $item->initial_balance = ($item->initial_balance ?? 0) + $extra;
+
+            return $item;
+        });
+        return $result;
     }
 }

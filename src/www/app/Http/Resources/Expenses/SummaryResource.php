@@ -23,17 +23,17 @@ class SummaryResource extends JsonResource
             'transaction_count' => (int) ($this->transaction_count ?? 0),
         ];
 
-        if (!is_null($this->category_id)) {
+        if (isset($this->category_id)) {
             $res['category_id'] = $this->category_id;
             $res['category_name'] = $this->name ?? '未分類';
             $res['initial_balance'] = $this->initial_balance ?? 0;
             $res['remaining_balance'] = ($res['initial_balance'] - $netAmount);
-        } elseif (!is_null($this->payment_method_id)) {
+        } elseif (isset($this->payment_method_id)) {
             $res['payment_method_id'] = $this->payment_method_id;
             $res['payment_method_name'] = $this->name ?? '不明';
             $res['initial_balance'] = $this->initial_balance ?? 0;
             $res['remaining_balance'] = ($res['initial_balance'] - $netAmount);
-        } elseif (!is_null($this->date)) {
+        } elseif (isset($this->date)) {
             $res['date'] = $this->date;
         }
 
