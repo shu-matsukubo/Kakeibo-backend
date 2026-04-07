@@ -3,7 +3,6 @@
 namespace App\Services\Expenses;
 
 use Illuminate\Support\Collection;
-use App\Models\Expenses\Expense;
 use Illuminate\Support\Facades\DB;
 use App\Models\Expenses\ExpenseRecurringAdjustment;
 use App\Http\Resources\Expenses\ExpenseResource;
@@ -13,6 +12,7 @@ use App\Enums\Expenses\ExpenseGroupBy;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use App\Models\Expenses\ExpenseCategory;
 use App\Models\Expenses\ExpensePaymentMethod;
+use App\Models\Expenses\Expense;
 
 class ExpenseService
 {
@@ -159,9 +159,7 @@ class ExpenseService
     */
     private function aggregateByDate(array $range)
     {
-        return DB::table('expenses')
-            ->whereBetween('date', [$range['start'], $range['end']])
-            ->whereNull('deleted_at')
+        return Expense::query()
             ->select([
                 'date',
                 DB::raw('SUM(amount) as total_amount'),
@@ -169,6 +167,7 @@ class ExpenseService
                 DB::raw('(SUM(amount) - SUM(point_amount)) as net_amount'),
                 DB::raw('COUNT(*) as transaction_count'),
             ])
+            ->whereBetween('date', [$range['start'], $range['end']])
             ->groupBy('date')
             ->orderBy('date')
             ->get();
