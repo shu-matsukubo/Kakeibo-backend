@@ -2,80 +2,49 @@
 
 namespace App\Support;
 
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 
 class DateUtil
 {
-    /**
-     * 2つのdatetimeが同じ月か比較
-     */
-    public static function isSameMonth($date1, $date2): bool
+    private const TZ = 'Asia/Tokyo';
+
+    public static function now(): CarbonImmutable
     {
-        return Carbon::parse($date1)->format('Y-m') ===
-            Carbon::parse($date2)->format('Y-m');
+        return CarbonImmutable::now(self::TZ);
     }
 
-    /**
-     * 今月の開始日を取得
-     */
-    public static function startOfMonth($date)
+    public static function toDateString(CarbonImmutable $date): string
     {
-        return Carbon::parse($date)->startOfMonth();
+        return $date->toDateString();
     }
 
-    /**
-     * 今月の終了日を取得
-     */
-    public static function endOfMonth($date)
+    public static function parseMonth(string $month): CarbonImmutable
     {
-        return Carbon::parse($date)->endOfMonth();
+        return CarbonImmutable::createFromFormat('Y-m', $month, self::TZ);
     }
 
-    /**
-     * 現在日時取得
-     */
-    public static function now(): Carbon
+    public static function resolveMonth(?string $month): CarbonImmutable
     {
-        return Carbon::now();
+        return $month
+            ? self::parseMonth($month)
+            : self::now();
     }
 
-    /**
-     * 今月の開始日と終了日
-     */
-    public static function currentMonthRange(): array
+    public static function startOfMonth(CarbonImmutable $date): CarbonImmutable
     {
-        $now = Carbon::now();
+        return $date->startOfMonth();
+    }
 
+    public static function endOfMonth(CarbonImmutable $date): CarbonImmutable
+    {
+        return $date->endOfMonth();
+    }
+
+    public static function monthRange(CarbonImmutable $date): array
+    {
         return [
-            'start' => $now->copy()->startOfMonth(),
-            'end' => $now->copy()->endOfMonth(),
+            'start' => self::startOfMonth($date),
+            'end' => self::endOfMonth($date),
         ];
-    }
-
-    /**
-     * 指定月の開始日と終了日
-     * $month: '2026-03' 形式想定
-     */
-    public static function monthRange(string $month): array
-    {
-        $date = Carbon::createFromFormat('Y-m', $month);
-
-        return [
-            'start' => $date->copy()->startOfMonth(),
-            'end' => $date->copy()->endOfMonth(),
-        ];
-    }
-
-    /**
-     * スタート月と間隔をもとに、現在が該当月か判定
-     */
-    public static function isApplicable(string $targetMonth, string $startMonth, int $interval): bool
-    {
-        $start = \Carbon\Carbon::parse($startMonth)->startOfMonth();
-        $target = \Carbon\Carbon::parse($targetMonth)->startOfMonth();
-
-        $diff = $start->diffInMonths($target, false);
-
-        return $diff >= 0 && $diff % $interval === 0;
     }
 }

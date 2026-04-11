@@ -4,6 +4,7 @@ namespace App\Http\Resources\Expenses;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Support\DateUtil;
 
 class SummaryResource extends JsonResource
 {
@@ -34,7 +35,7 @@ class SummaryResource extends JsonResource
             $res['initial_balance'] = $this->initial_balance ?? 0;
             $res['remaining_balance'] = ($res['initial_balance'] - $netAmount);
         } elseif (isset($this->date)) {
-            $res['date'] = $this->date;
+            $res['date'] = DateUtil::toDateString($this->date);
         }
 
         return $res;

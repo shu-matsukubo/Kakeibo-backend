@@ -2,20 +2,20 @@
 
 namespace App\Services\Expenses;
 
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
-use App\Models\Expenses\ExpenseRecurringAdjustment;
 use App\Http\Resources\Expenses\ExpenseResource;
 use App\Http\Resources\Expenses\SummaryResource;
 use App\Support\DateUtil;
 use App\Enums\Expenses\ExpenseGroupBy;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use App\Models\Expenses\ExpenseCategory;
-use App\Models\Expenses\ExpensePaymentMethod;
+use App\Queries\Expenses\ExpenseQuery;
 use App\Models\Expenses\Expense;
 
 class ExpenseService
 {
+    public function __construct(private ExpenseQuery $query)
+    {
+        //
+    }
     /**
      * モードに応じて支出データを取得
      */
@@ -32,27 +32,16 @@ class ExpenseService
      */
     private function getSummary(array $params): AnonymousResourceCollection
     {
-        $range = $params['month']
-            ? DateUtil::monthRange($params['month'])
-            : DateUtil::currentMonthRange();
+        $range = DateUtil::monthRange(DateUtil::resolveMonth($params['month']));
 
         $groupBy = ExpenseGroupBy::from($params['group_by'] ?? null);
 
         // 履歴情報本体を取得
-        $result = match ($groupBy) {
-            ExpenseGroupBy::CATEGORY => $this->aggregateByCategory($range),
-            ExpenseGroupBy::PAYMENT_METHOD => $this->aggregateByPaymentMethod($range),
-            ExpenseGroupBy::DATE => $this->aggregateByDate($range),
-            default => collect(),
-        };
+        $result = $this->query->aggregate($range, $groupBy);
 
-        // 追加サイクル情報を取得
-        $result = match ($groupBy) {
-            ExpenseGroupBy::CATEGORY => $this->addRecurringList($groupBy, $result),
-            ExpenseGroupBy::PAYMENT_METHOD => $this->addRecurringList($groupBy, $result),
-            ExpenseGroupBy::DATE => $result,
-            default => collect(),
-        };
+        if ($groupBy->supportsRecurring()) {
+            $result = $this->query->recurring($result, $groupBy, $params['month'] ?? null);
+        }
 
         return SummaryResource::collection($result);
     }
@@ -63,7 +52,7 @@ class ExpenseService
     private function getHistory(array $params): AnonymousResourceCollection
     {
         // 範囲を指定
-        $range = $params['month'] ? DateUtil::monthRange($params['month']) : DateUtil::currentMonthRange();
+        $range = DateUtil::monthRange(DateUtil::resolveMonth($params['month']));
 
         // 取得
         $result = Expense::whereBetween('date', [
@@ -90,133 +79,5 @@ class ExpenseService
     public function delete(Expense $expense)
     {
         return $expense->delete();
-    }
-
-    /*
-    * カテゴリごとの支出を取得
-    */
-    private function aggregateByCategory(array $range)
-    {
-        return ExpenseCategory::query()
-            ->leftJoin('expenses', function ($join) use ($range) {
-                $join->on('expenses.category_id', '=', 'expense_categories.id')
-                    ->whereBetween('expenses.date', [$range['start'], $range['end']])
-                    ->whereNull('expenses.deleted_at');
-            })
-            ->select([
-                'expense_categories.id as category_id',
-                'expense_categories.name',
-                'expense_categories.initial_balance',
-
-                DB::raw('COALESCE(SUM(expenses.amount), 0) as total_amount'),
-                DB::raw('COALESCE(SUM(expenses.point_amount), 0) as total_point'),
-                DB::raw('COALESCE(SUM(expenses.amount) - SUM(expenses.point_amount), 0) as net_amount'),
-                DB::raw('COUNT(expenses.id) as transaction_count'),
-            ])
-            ->where('expense_categories.is_active', true)
-            ->groupBy([
-                'expense_categories.id',
-                'expense_categories.name',
-                'expense_categories.initial_balance',
-            ])
-            ->orderBy('expense_categories.sort_order')
-            ->get();
-    }
-
-    /*
-    * 支払方法ごとの支出を取得
-    */
-    private function aggregateByPaymentMethod(array $range)
-    {
-        return ExpensePaymentMethod::query()
-            ->leftJoin('expenses', function ($join) use ($range) {
-                $join->on('expenses.payment_method_id', '=', 'expense_payment_methods.id')
-                    ->whereBetween('expenses.date', [$range['start'], $range['end']])
-                    ->whereNull('expenses.deleted_at');
-            })
-            ->select([
-                'expense_payment_methods.id as payment_method_id',
-                'expense_payment_methods.name',
-                'expense_payment_methods.initial_balance',
-
-                DB::raw('COALESCE(SUM(expenses.amount), 0) as total_amount'),
-                DB::raw('COALESCE(SUM(expenses.point_amount), 0) as total_point'),
-                DB::raw('COALESCE(SUM(expenses.amount) - SUM(expenses.point_amount), 0) as net_amount'),
-                DB::raw('COUNT(expenses.id) as transaction_count'),
-            ])
-            ->where('expense_payment_methods.is_active', true)
-            ->groupBy([
-                'expense_payment_methods.id',
-                'expense_payment_methods.name',
-                'expense_payment_methods.initial_balance',
-            ])
-            ->orderBy('expense_payment_methods.sort_order')
-            ->get();
-    }
-
-    /*
-    * 日付ごとの支出を取得
-    */
-    private function aggregateByDate(array $range)
-    {
-        return Expense::query()
-            ->select([
-                'date',
-                DB::raw('SUM(amount) as total_amount'),
-                DB::raw('SUM(point_amount) as total_point'),
-                DB::raw('(SUM(amount) - SUM(point_amount)) as net_amount'),
-                DB::raw('COUNT(*) as transaction_count'),
-            ])
-            ->whereBetween('date', [$range['start'], $range['end']])
-            ->groupBy('date')
-            ->orderBy('date')
-            ->get();
-    }
-
-    /*
-    * 繰り返し発生する追加情報を保持
-    */
-    private function addRecurringList(ExpenseGroupBy $groupBy, Collection $result)
-    {
-        $targetMonth = $params['month'] ?? now()->format('Y-m');
-        $target = \Carbon\Carbon::parse($targetMonth)->startOfMonth();
-
-        $recurringList = ExpenseRecurringAdjustment::query()
-            ->when($groupBy === ExpenseGroupBy::CATEGORY, function ($q) use ($result) {
-                $q->whereIn('category_id', $result->pluck('category_id')->filter());
-            })
-            ->when($groupBy === ExpenseGroupBy::PAYMENT_METHOD, function ($q) use ($result) {
-                $q->whereIn('payment_method_id', $result->pluck('payment_method_id')->filter());
-            })
-            ->whereDate('start_month', '<=', $target)
-            ->whereRaw(
-                'MOD(TIMESTAMPDIFF(MONTH, start_month, ?), interval_months) = 0',
-                [$target->format('Y-m-01')]
-            )
-            ->get();
-
-        $grouped = $recurringList->groupBy(function ($r) use ($groupBy) {
-            return match ($groupBy) {
-                ExpenseGroupBy::CATEGORY => $r->category_id,
-                ExpenseGroupBy::PAYMENT_METHOD => $r->payment_method_id,
-                default => null,
-            };
-        });
-
-        $result->transform(function ($item) use ($grouped, $groupBy) {
-
-            $key = match ($groupBy) {
-                ExpenseGroupBy::CATEGORY => $item->category_id,
-                ExpenseGroupBy::PAYMENT_METHOD => $item->payment_method_id,
-                default => null,
-            };
-
-            $extra = collect($grouped[$key] ?? [])->sum('amount');
-
-            $item->initial_balance = ($item->initial_balance ?? 0) + $extra;
-
-            return $item;
-        });
-        return $result;
     }
 }

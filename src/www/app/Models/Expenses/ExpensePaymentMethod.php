@@ -2,22 +2,26 @@
 
 namespace App\Models\Expenses;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUlids;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\BaseModel;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use App\Enums\ActiveStatus;
+use App\Models\Traits\HasActiveScope;
 
-class ExpensePaymentMethod extends Model
+#[Fillable([
+    'name',
+    'sort_order',
+    'is_active',
+])]
+class ExpensePaymentMethod extends BaseModel
 {
-    use HasUlids;
-    use SoftDeletes;
-    protected $keyType = 'string';
-    public $incrementing = false;
+    use HasActiveScope;
 
-    protected $fillable = [
-        'name',
-        'sort_order',
-        'is_active',
-    ];
+    protected function casts(): array
+    {
+        return array_merge(parent::casts(), [
+            'is_active' => ActiveStatus::class,
+        ]);
+    }
 
     /*
     * 支払い履歴とのリレーション

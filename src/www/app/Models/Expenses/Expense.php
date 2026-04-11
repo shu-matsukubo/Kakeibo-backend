@@ -2,28 +2,29 @@
 
 namespace App\Models\Expenses;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
-use App\Enums\Expenses\ExpenseGroupBy;
+use App\Models\BaseModel;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 
-class Expense extends Model
+#[Fillable([
+    'amount',
+    'point_amount',
+    'payment_method_id',
+    'category_id',
+    'memo',
+    'date',
+])]
+class Expense extends BaseModel
 {
-    use HasUlids, SoftDeletes;
+    use SoftDeletes;
 
-    protected $keyType = 'string';
-    public $incrementing = false;
-
-    protected $fillable = [
-        'amount',
-        'point_amount',
-        'payment_method_id',
-        'category_id',
-        'memo',
-        'date',
-    ];
+    protected function casts(): array
+    {
+        return array_merge(parent::casts(), [
+            'date' => 'immutable_date',
+            'deleted_at' => 'immutable_date',
+        ]);
+    }
 
     public function paymentMethod()
     {
