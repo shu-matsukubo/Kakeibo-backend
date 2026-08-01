@@ -1,177 +1,98 @@
-# matsu API
+# matsu-api
 
-Laravel API for the matsu workspace. The application runs in Docker with PHP/Apache and MySQL.
+`matsu-api` は、matsu ワークスペースの家計簿ドメインを提供する Laravel API です。BFF から呼び出され、`matsu-auth` が発行したアクセストークンを検証します。
 
-The Laravel app lives under `src/www`.
+Laravel アプリは `src/www` にあります。サービス境界、API 契約、認証方式の詳細は末尾の設計文書を参照してください。
 
-## Tech Stack
+## 必要条件
 
-- PHP 8.4
-- Laravel 13
-- MySQL 8.0
-- Docker / Docker Compose
-- Composer
-- PHPUnit
-- Laravel Pint
-- PHPStan / Larastan
+- Docker Desktop または Docker Engine
+- Docker Compose
+- Git Bash など、`sh` スクリプトを実行できる環境
 
-## Local Setup
+ローカルでは API が `http://localhost:18080/api`、MySQL が `localhost:13306` で公開されます。
 
-From the repository root:
+## 初回セットアップ
+
+リポジトリルートで次を実行します。
 
 ```bash
 sh scripts/setup.sh
 ```
 
-The setup script:
+このスクリプトは Git hook の配置、Docker イメージのビルド、コンテナ起動、Composer 依存関係のインストール、マイグレーション、シードを順に行います。
 
-1. Installs Git hooks.
-2. Builds Docker images.
-3. Starts containers.
-4. Runs `composer install`.
-5. Runs migrations.
-6. Runs seeders.
+ローカル開発用のアプリ・DB・認証設定は `src/www/.env.local` を Compose が読み込みます。これはローカル専用であり、本番の認証情報を記載しないでください。
 
-Docker Compose injects the tracked local development settings from
-`src/www/.env.local` into the `api` container. Local Docker startup does not
-require an ignored `src/www/.env` copy. The API startup command also removes a
-stale Laravel config cache before Apache starts, so cached values cannot hide
-changes to the Compose-provided environment.
-
-## Daily Start / Stop
+## 起動と停止
 
 ```bash
-docker compose up -d
+docker compose up -d api
 docker compose down
 ```
 
-`docker compose up -d` uses `src/www/.env.local` for the MySQL and Auth settings,
-including `DB_CONNECTION=mysql` and `DB_HOST=api-db`.
+状態とログは次のコマンドで確認できます。
 
-The API is available at:
-
-```text
-http://localhost:18080/api
+```bash
+docker compose ps
+docker compose logs -f api
 ```
 
-MySQL is exposed at:
+通常の停止では named volume を削除しません。DB を含むローカルデータを消す操作は、必要性を確認してから行ってください。
 
-```text
-localhost:13306
-```
+## 更新と開発
 
-## Containers
-
-- `api`: PHP 8.4 + Apache, mounted at `/var/www`.
-- `api-db`: MySQL 8.0.
-
-Database defaults:
-
-```text
-database: matsu
-user: test_user
-password: test_user_pass
-root password: test_root_pass
-```
-
-## Update After Pull
-
-From the repository root:
+`develop` の更新を取り込んだ後は、リポジトリルートで次を実行します。
 
 ```bash
 sh scripts/update.sh
 ```
 
-This starts or updates the containers, runs `composer install`, clears Laravel's
-config cache, and then runs migrations and seeders inside the Docker environment.
+コンテナの更新、Composer 依存関係の同期、設定キャッシュのクリア、マイグレーション、シードが実行されます。
 
-## Quality Checks
+開発時は `develop` から作業ブランチを作成し、変更と検証を完了してから `develop` 向け Pull Request を作成します。リリースは GitHub 上で `develop` から `main` へマージします。
 
-Run these inside the `api` container from `/var/www`, or through `docker compose exec api ...` from the repository root.
-
-```bash
-composer pint:test
-composer analyse
-composer test
-```
-
-Format PHP code with:
-
-```bash
-composer pint
-```
-
-## Git Hooks
-
-Install hooks with:
-
-```bash
-sh scripts/setup-hooks.sh
-```
-
-Hooks are copied from `.githooks/` into `.git/hooks/`.
-
-- `pre-commit`: formats staged PHP files with Pint in the `api` container and re-stages changed files.
-- `pre-push`: runs Pint and PHPStan for pushed PHP diffs in the `api` container. If Pint changes files, the push is stopped so the changes can be reviewed and committed.
-
-The API Docker containers must be running for the hooks to work.
-
-## CI
-
-GitHub Actions workflow:
-
-```text
-.github/workflows/ci.yml
-```
-
-CI runs on pull requests to `main` and performs:
-
-- Composer install
-- `.env.testing` setup
-- Migrations
-- Seeders
-- Pint check
-- PHPStan / Larastan
-- PHPUnit
-
-PHPStan currently uses `continue-on-error: true` in CI.
-
-## Authentication
-
-API requests are protected by JWT middleware. Tokens are issued by `matsu-auth`, and this API verifies them using the auth server JWKS endpoint.
-
-Important local auth settings:
-
-```text
-AUTH_SERVER_ISSUER=http://localhost:18081
-AUTH_SERVER_AUDIENCE=matsu-api
-AUTH_SERVER_JWKS_URL=http://host.docker.internal:18081/.well-known/jwks.json
-AUTH_SERVER_JWKS_CACHE_SECONDS=3600
-AUTH_SERVER_CACHE_STORE=database
-```
-
-The container startup clears stale Laravel config cache automatically. To clear
-it without restarting the container, run:
+設定変更が反映されない場合は、次のコマンドで Laravel の設定キャッシュを削除します。
 
 ```bash
 docker compose exec api php artisan config:clear
 ```
 
-## Main Directories
+## 主な設定ファイル
 
-- `src/www/routes/api.php`: API routes.
-- `src/www/app/Http/Controllers/Api`: API controllers.
-- `src/www/app/Http/Middleware`: HTTP middleware, including JWT auth.
-- `src/www/app/Http/Resources`: API response resources.
-- `src/www/app/Services`: Application services.
-- `src/www/app/Queries`: Query classes.
-- `src/www/app/Models`: Eloquent models.
-- `src/www/app/Support`: Shared support utilities.
-- `src/www/database/migrations`: Database migrations.
+- `docker-compose.yml`: ローカルの API・MySQL サービス、ポート、volume
+- `src/www/.env.local`: ローカル開発用のアプリ・DB・認証設定
+- `src/www/.env.testing`: CI とテスト用の設定
+- `src/www/composer.json`: PHP 依存関係と品質ゲート
 
-## Main Endpoints
+## 品質ゲート
 
-- `GET /api/expenses`
-- `POST /api/expenses`
-- `GET /api/payment-methods`
-- `GET /api/categories`
+API コンテナを起動した状態で、リポジトリルートから実行します。
+
+```bash
+docker compose exec api composer pint:test
+docker compose exec api composer analyse
+docker compose exec api composer test
+```
+
+コードを整形する場合は `docker compose exec api composer pint`、coverage を確認する場合は `docker compose exec api composer test:coverage` を実行します。
+
+Git hook は初回セットアップに含まれます。単独で再配置する場合は次を実行します。
+
+```bash
+sh scripts/setup-hooks.sh
+```
+
+- `pre-commit`: ステージ済み PHP を Pint で整形し、変更を再ステージします。
+- `pre-push`: push 対象の PHP に Pint と PHPStan を実行し、修正またはエラーがあれば push を停止します。
+
+hook の実行には API コンテナが必要です。
+
+GitHub Actions は `develop` または `main` 向け Pull Request で、依存関係のインストール、マイグレーション、シード、Pint、PHPStan、PHPUnit を実行します。workflow の正本は `.github/workflows/ci.yml` です。
+
+## 設計文書
+
+- [API コンポーネント](https://github.com/shu-matsukubo/matsu-docs/blob/main/docs/components/api.md)
+- [API 契約](https://github.com/shu-matsukubo/matsu-docs/blob/main/docs/architecture/api-contracts.md)
+- [認証とセッション](https://github.com/shu-matsukubo/matsu-docs/blob/main/docs/architecture/authentication.md)
+- [品質ゲート](https://github.com/shu-matsukubo/matsu-docs/blob/main/docs/architecture/quality-gates.md)
