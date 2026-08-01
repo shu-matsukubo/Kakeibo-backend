@@ -3,9 +3,17 @@ services:
     build:
       context: docker_config/web/
     container_name: matsu-web
+    env_file:
+      - ./src/www/.env.local
     ports:
       - 18080:80
     working_dir: /var/www
+    command:
+      - /bin/sh
+      - -c
+      - |
+        rm -f bootstrap/cache/config.php
+        exec apache2-foreground
     volumes:
       - ./src/www/:/var/www
       - framework_data:/var/www/storage/framework

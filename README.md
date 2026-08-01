@@ -25,13 +25,18 @@ sh scripts/setup.sh
 
 The setup script:
 
-1. Copies `src/www/.env.local` to `src/www/.env`.
-2. Installs Git hooks.
-3. Builds Docker images.
-4. Starts containers.
-5. Runs `composer install`.
-6. Runs migrations.
-7. Runs seeders.
+1. Installs Git hooks.
+2. Builds Docker images.
+3. Starts containers.
+4. Runs `composer install`.
+5. Runs migrations.
+6. Runs seeders.
+
+Docker Compose injects the tracked local development settings from
+`src/www/.env.local` into the `web` container. Local Docker startup does not
+require an ignored `src/www/.env` copy. The web startup command also removes a
+stale Laravel config cache before Apache starts, so cached values cannot hide
+changes to the Compose-provided environment.
 
 ## Daily Start / Stop
 
@@ -39,6 +44,9 @@ The setup script:
 docker compose up -d
 docker compose down
 ```
+
+`docker compose up -d` uses `src/www/.env.local` for the MySQL and Auth settings,
+including `DB_CONNECTION=mysql` and `DB_HOST=db`.
 
 The API is available at:
 
@@ -74,7 +82,8 @@ From the repository root:
 sh scripts/update.sh
 ```
 
-This runs `composer install`, migrations, and seeders inside the Docker environment.
+This starts or updates the containers, runs `composer install`, clears Laravel's
+config cache, and then runs migrations and seeders inside the Docker environment.
 
 ## Quality Checks
 
@@ -141,10 +150,11 @@ AUTH_SERVER_JWKS_CACHE_SECONDS=3600
 AUTH_SERVER_CACHE_STORE=database
 ```
 
-If auth-related environment values change, clear Laravel config cache:
+The container startup clears stale Laravel config cache automatically. To clear
+it without restarting the container, run:
 
 ```bash
-php artisan config:clear
+docker compose exec web php artisan config:clear
 ```
 
 ## Main Directories
