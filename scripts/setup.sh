@@ -22,24 +22,24 @@ docker compose up -d
 
 echo ""
 echo "[4/6] composer install を実行します..."
-docker compose exec web composer install --no-interaction
+docker compose exec api composer install --no-interaction
 
 echo ""
 echo "[5/6] マイグレーションを実行します..."
 
 echo ""
 echo "DBの起動を待機中..."
-until docker compose exec db mysqladmin ping -h localhost -u root -ptest_root_pass --silent 2>/dev/null; do
+until docker compose exec api-db mysqladmin ping -h localhost -u root -ptest_root_pass --silent 2>/dev/null; do
   printf "."
   sleep 2
 done
 echo " DB起動完了"
 
-docker compose exec web php artisan migrate --force
+docker compose exec api php artisan migrate --force
 
 echo ""
 echo "[6/6] シーダーを実行します..."
-docker compose exec web php artisan db:seed
+docker compose exec api php artisan db:seed
 
 echo ""
 echo "=== セットアップ完了 ==="

@@ -20,7 +20,7 @@ fi
 # Pintで自動修正
 echo ""
 echo "Pint: フォーマットを適用中..."
-echo "$DIFF_FILES" | xargs -r docker compose exec -T web ./vendor/bin/pint
+echo "$DIFF_FILES" | xargs -r docker compose exec -T api ./vendor/bin/pint
 
 PINT_EXIT=$?
 
@@ -44,7 +44,7 @@ echo "フォーマット: OK"
 # PHPStan静的解析（差分ファイルのみ）
 echo ""
 echo "PHPStan: 静的解析を実行中..."
-echo "$DIFF_FILES" | xargs docker compose exec -T web ./vendor/bin/phpstan analyse --memory-limit=512M
+echo "$DIFF_FILES" | xargs docker compose exec -T api ./vendor/bin/phpstan analyse --memory-limit=512M
 
 PHPSTAN_EXIT=$?
 

@@ -14,19 +14,19 @@ docker compose up -d
 
 echo ""
 echo "[2/5] composer install を実行します..."
-docker compose exec web composer install --no-interaction
+docker compose exec api composer install --no-interaction
 
 echo ""
 echo "[3/5] Laravelの設定キャッシュをクリアします..."
-docker compose exec web php artisan config:clear
+docker compose exec api php artisan config:clear
 
 echo ""
 echo "[4/5] マイグレーションを実行します..."
-docker compose exec web php artisan migrate --force
+docker compose exec api php artisan migrate --force
 
 echo ""
 echo "[5/5] シーダーを実行します..."
-docker compose exec web php artisan db:seed
+docker compose exec api php artisan db:seed
 
 echo ""
 echo "=== アップデート完了 ==="

@@ -10,7 +10,7 @@ fi
 echo "Pint: ステージ済みファイルにフォーマットを適用します..."
 
 # コンテナ内でpintを実行（ファイルパスを渡す）
-echo "$STAGED_PHP_FILES" | xargs -r docker compose exec -T web ./vendor/bin/pint
+echo "$STAGED_PHP_FILES" | xargs -r docker compose exec -T api ./vendor/bin/pint
 
 PINT_EXIT=$?
 

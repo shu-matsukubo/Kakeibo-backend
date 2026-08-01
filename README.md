@@ -33,8 +33,8 @@ The setup script:
 6. Runs seeders.
 
 Docker Compose injects the tracked local development settings from
-`src/www/.env.local` into the `web` container. Local Docker startup does not
-require an ignored `src/www/.env` copy. The web startup command also removes a
+`src/www/.env.local` into the `api` container. Local Docker startup does not
+require an ignored `src/www/.env` copy. The API startup command also removes a
 stale Laravel config cache before Apache starts, so cached values cannot hide
 changes to the Compose-provided environment.
 
@@ -46,7 +46,7 @@ docker compose down
 ```
 
 `docker compose up -d` uses `src/www/.env.local` for the MySQL and Auth settings,
-including `DB_CONNECTION=mysql` and `DB_HOST=db`.
+including `DB_CONNECTION=mysql` and `DB_HOST=api-db`.
 
 The API is available at:
 
@@ -62,8 +62,8 @@ localhost:13306
 
 ## Containers
 
-- `web`: PHP 8.4 + Apache, mounted at `/var/www`.
-- `db`: MySQL 8.0.
+- `api`: PHP 8.4 + Apache, mounted at `/var/www`.
+- `api-db`: MySQL 8.0.
 
 Database defaults:
 
@@ -87,7 +87,7 @@ config cache, and then runs migrations and seeders inside the Docker environment
 
 ## Quality Checks
 
-Run these inside the `web` container from `/var/www`, or through `docker compose exec web ...` from the repository root.
+Run these inside the `api` container from `/var/www`, or through `docker compose exec api ...` from the repository root.
 
 ```bash
 composer pint:test
@@ -111,8 +111,8 @@ sh scripts/setup-hooks.sh
 
 Hooks are copied from `.githooks/` into `.git/hooks/`.
 
-- `pre-commit`: formats staged PHP files with Pint in the `web` container and re-stages changed files.
-- `pre-push`: runs Pint and PHPStan for pushed PHP diffs in the `web` container. If Pint changes files, the push is stopped so the changes can be reviewed and committed.
+- `pre-commit`: formats staged PHP files with Pint in the `api` container and re-stages changed files.
+- `pre-push`: runs Pint and PHPStan for pushed PHP diffs in the `api` container. If Pint changes files, the push is stopped so the changes can be reviewed and committed.
 
 The API Docker containers must be running for the hooks to work.
 
@@ -154,7 +154,7 @@ The container startup clears stale Laravel config cache automatically. To clear
 it without restarting the container, run:
 
 ```bash
-docker compose exec web php artisan config:clear
+docker compose exec api php artisan config:clear
 ```
 
 ## Main Directories
